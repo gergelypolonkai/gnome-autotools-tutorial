@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<book>
+  <bookinfo>
+    <title>Using the GNU Auototools toolset for writing GNOME-related
+    software</title>
+
+    <author>
+      <firstname>Gergely</firstname>
+
+      <surname>Polonkai</surname>
+    </author>
+
+    <pubdate>September 22, 2013</pubdate>
+
+    <abstract>
+      <para>Configuring the Autotools toolset to suffice for GNOME Software
+      development</para>
+    </abstract>
+
+    <copyright>
+      <year>2013</year>
+
+      <holder>Gergely Polonkai</holder>
+    </copyright>
+
+    <legalnotice>
+      <para>This work is distributed under a CreativeCommons Attribution-Share
+      Alike 3.0 Unported license.</para>
+    </legalnotice>
+  </bookinfo>
+
+  <dedication>
+    <para>I dedicate this article to all the <orgname>GNOME</orgname> Devs,
+    who don't really seem to like writing documentation. I feel for them, as I
+    was many times in the same shoes. I hope you get some neat documentors
+    soon!</para>
+  </dedication>
+
+  <preface>
+    <title>Preface</title>
+
+    <para>While developing my first application for the GNOME Desktop, one of
+    my greatest problems was that the use of
+    <productname>Autotools</productname> is not documented for this use case.
+    The GNOME people have several (somewhat) internal protocols they follow,
+    and they also developed some helper M4 functions, but their use is hardly
+    documented, if documented at all.</para>
+
+    <para>After digging through the sources of many projects, I came to a
+    better understanding of <productname>Autotools</productname>, the
+    freedesktop.org standards, and <productname>GNOME</productname> itself,
+    and learned about application writing best practices. But most
+    importantly, I came to the decision to write this tutorial, so no other
+    developers will have to suffer from this problem.</para>
+  </preface>
+
+  <preface>
+    <title>Terms and Assumptions</title>
+
+    <para>Although I assume basic knowledge of
+    <productname>Autotools</productname> throughout this document, I will try
+    my best to go into the details, so even beginners will have chance to
+    build good <filename>Makefile</filename>s. Also, I will use a sample
+    GNOME'ish C program, <productname>HelloApplication</productname> as an
+    example.</para>
+
+    <para>This article is not some sacred text. It contains my (independent
+    developer, even independent of <orgname>GNOME</orgname> in some ways)
+    knowledge of the topic. You don't have to follow every little step to
+    write good software at all.</para>
+  </preface>
+
+  <chapter>
+    <title>The Big Picture</title>
+
+    <section>
+      <title>Our application's goal</title>
+
+      <para>The goal of this application is two-fold. First of all, it
+      displays a widget defined in a library called
+      <productname>libhello-application</productname>. It does this in a neat
+      little <classname>GtkWindow</classname>, with its own icon, and in a
+      localized manner. You can set some preferences in the Preferences
+      window, which is stored in <classname>GSettings</classname>, and if
+      something is not clear, you can turn to the application's
+      <productname>Yelp</productname> help files. Oh, and as
+      <productname>libhello-application</productname>'s widget is pretty, we
+      decided to make it available to other applications, so we also provide a
+      <productname>pkgconfig</productname> definitions file, and a
+      <productname>GTK-Doc</productname> documentation for that.</para>
+    </section>
+
+    <section>
+      <title>Directory structure</title>
+
+      <para>The directory structure of our application is as follows.</para>
+
+      <warning>
+        <para>Please note that <filename>/</filename> in this case don't refer
+        to the filesystem root, but the project root!</para>
+      </warning>
+
+      <programlisting>data/
+    icons/
+        16x16/
+            hello-application.png
+        22x22/
+            hello-application.png
+        24x24/
+            hello-application.png
+        32x32/
+            hello-application.png
+        48x48/
+            hello-application.png
+        256x256/
+            hello-application.png
+        hello-application.svg
+        Makefile.am
+    hello-application.desktop.in.in
+    libhello-application.pc.in
+    org.example.helloapplication.gschema.xml
+    Makefile.am
+docs/
+    help/
+        C/
+            index.page
+        en_GB/
+            en_GB.po
+        hello-application.omf.in
+        Makefile.am
+    references/
+        libhello-application/
+            libhello-application/Makefile.am
+    Makefile.am
+libhello-application/
+    hello-widget.c
+    hello-widget.h
+    hello-widget-private.h
+    Makefile.am
+po/
+    LINGUAS
+    POTFILES.in
+    en_GB.po
+src/
+    hello-app.c
+    hello-app.h
+    hello-preferences.c
+    hello-preferences.h
+    hello-settings.c
+    hello-settings.h
+    hello-window.c
+    hello-window.h
+    main.c
+Makefile.am
+README
+autogen.sh
+configure.ac</programlisting>
+
+      <para>Pretty crowded, huh? And after you run the
+      <productname>Autotools</productname> magic, it will become much more
+      crowded, trust me!</para>
+    </section>
+
+    <section>
+      <title>Why so much icons?</title>
+
+      <para>Short answer: the <productname>freedesktop.org</productname>
+      standards suggest them.</para>
+
+      <para>Long answer: All icons have their own functionality. For example,
+      16x16 icons are for small application menus, like the one in
+      <productname>WindowMaker</productname>, and it is also used by some
+      window managers to decorate windows (like the one on
+      <productname>Windows</productname> systems). 48x48 are the standard icon
+      size for the <productname>GNOME Shell</productname> application grid.
+      256x256 icons will be usually used on systems used by visually impaired
+      people.</para>
+    </section>
+  </chapter>
+
+  <chapter>
+    <title>The Source Tree</title>
+
+    <para>Our application is divided into two parts. The first one is
+    <filename>libhello-application/</filename>, which provides
+    <classname>HelloWidget</classname>.</para>
+  </chapter>
+
+  <chapter>
+    <title>The Build System</title>
+
+    <para>The base of our operations is the / directory, which is often
+    referenced to as $(top_srcdir). The Makefile.am in this directory usually
+    contains nothing more than a SUBDIRS variable, which will instruct make to
+    recurse into those directories.</para>
+
+    <section>
+      <title/>
+
+      <para/>
+    </section>
+  </chapter>
+</book>
